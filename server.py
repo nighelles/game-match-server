@@ -50,6 +50,7 @@ REQUESTWAIT			= 5
 REQUESTFOUND		= 6
 
 DATACODE			= 7
+LEFTCODE			= 8
 
 
 
@@ -77,7 +78,8 @@ class Game(protocol.Protocol):
 		# First tell everyone we're talking to that we're leaving
 		# This handles if we're in a game
 		for userkey in self.users:
-			self.users[userkey].transport.write(str(self.user.name+" left."))
+			leftmessage = str(pack("b",LEFTCODE) + self.user.username)
+			self.users[senduserkey].transport.write(leftmessage)
 			self.users[userkey].users.pop(self.user.name,None)
 			
 		# Then make sure we're no longer in the list of waiting players
