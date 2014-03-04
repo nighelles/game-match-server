@@ -173,6 +173,8 @@ class Game(protocol.Protocol):
 	def gameRequest(self,game,longitude,latitude,tolerance):
 		# now we can either find a request that's already there, or make one to wait
 		# FIRST look for requests that match the one that we already have
+		tolerance = tolerance/70 # This is a really rough hack to get approximate longitude/latitude difference in miles
+		
 		matchingRequests = GameRequest.select().where(
 			(GameRequest.game==game) & 
 			(GameRequest.latitude < (latitude + tolerance)) & 
