@@ -1,0 +1,7 @@
+This is the server that will allow game matching and communication between users.
+
+
+Things to Fix:
+- Allow matching between more than 2 people
+- Match based on actual distance rather than long/lat difference?
+- Change connection objects to only store the transport, rather than the whole connection
