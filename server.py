@@ -124,7 +124,7 @@ class Game(protocol.Protocol):
 			self.identifyUser(username)
 			
 		if (command == GAMEREQUEST):
-			cmd,game,longitude,latitude,tolerance,availabile,endline = data.split(":")
+			cmd,game,longitude,latitude,tolerance,available,endline = data.split(":")
 			print "Game request for: " + game + " At: " + longitude + " -- " + latitude
 			self.gameRequest(game,float(longitude),float(latitude),float(tolerance),int(available))
 			
