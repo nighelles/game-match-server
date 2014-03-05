@@ -201,7 +201,7 @@ class Game(protocol.Protocol):
 				users[selectedRequest.name].users[userkey].users[self.user.name] = self
 				users[selectedRequest.name].userCommunicateCode(REQUESTFOUND)
 				# copy everyone's name into our list of members
-				self.users[users[selectedRequest.name].users[userkey].name] = users[selectedRequest.name].users[userkey
+				self.users[users[selectedRequest.name].users[userkey].name] = users[selectedRequest.name].users[userkey]
 			
 			users[selectedRequest.name].users[self.user.name] = self	#copy our name into their list of users in match
 			self.userCommunicateCode(REQUESTFOUND)
