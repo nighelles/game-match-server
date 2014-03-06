@@ -1,0 +1,84 @@
+<script src="/socket.io/socket.io.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+
+<div id="aliasStuff">
+	<label for="aliasInput">Please Select an alias:</label>
+	<input type="text" id="aliasInput">
+	<button id = "sendAliasButton">Set Alias</button></input>
+</div>
+
+<div id="chatStuff">
+	<div id="chatEntries">
+	Chat Text:
+	</div>
+
+	<input type="text" id="messageText">
+
+	<button id="testRequest">Test Request</button>
+</div>
+
+<script>
+	var socket = io.connect('http://localhost');
+	var alias = '';
+
+	function receiveMessage(msg, alias) {
+		$("#chatEntries").append('<div class="message"><p>' + alias + ' : ' + msg + '</p></div>');
+	}
+
+	function sendMessage() {
+		if ($('#messageText').val() != "")
+		{
+			socket.emit('message', $('#messageText').val());
+			receiveMessage($('#messageText').val(), "Me");
+			$('#messageText').val('');
+		}
+	}
+
+	function sendTestRequest() {
+		var request = {gametype : "Test" , loc : [123,123], dist : 1, available : 1};
+		socket.emit('gameRequest', request);
+	}
+
+	function setAlias() {
+		if ($('#aliasInput').val() != "")
+		{
+			alias = $("#aliasInput").val();
+			//alert('set alias');
+			socket.emit('setAlias', alias);
+			$('#chatStuff').show();
+			$('#aliasStuff').hide();
+		}
+	}
+
+	socket.on('message', function(data) {
+		receiveMessage(data['message'], data['alias']);
+	});
+
+	socket.on('notification', function(notification) {
+		if (notification['type'] == "MATCHWAITING") {
+			$("#chatEntries").append('<div class="notification"><p>##### Waiting for a match #####</p></div>');
+		}
+		if (notification['type'] == "PLAYERFOUND") {
+			if (notification['alias'] != alias) {
+				$("#chatEntries").append('<div class="notification"><p>##### Player Found: ' 
+					+ notification['alias'] + ' #####</p></div>');
+			}
+		}
+		if (notification['type'] == "MATCHFOUND") {
+			$("#chatEntries").append('<div class="notification"><p>##### MATCH FOUND #####</p></div>');
+		}
+	});
+
+	$(function() {
+		$('#chatStuff').hide();
+		$('#sendAliasButton').click(function() {setAlias();});
+		$('#testRequest').click(function () {sendTestRequest();});
+	});
+
+	$('#messageText').keydown(function (event) {
+		if (event.keyCode == 13) {
+			sendMessage();
+		}
+	});
+
+</script>
