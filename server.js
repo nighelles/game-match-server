@@ -42,7 +42,7 @@ var http = require('http').createServer(handler)
 	, io = require('socket.io').listen(http)
 	, fs = require('fs')
 
-http.listen(8024);
+http.listen(80);
 
 function handler(req, res) {
 	fs.readFile(__dirname + '/index.html',
@@ -102,9 +102,16 @@ io.sockets.on('connection', function(socket) {
 
 				requestMatch.available = requestMatch.available - 1; // one joined
 
-				requestMatch.save( function (err, newGameRequest) {
-					console.log("Joined Match: " + JSON.stringify(newGameRequest));
-				});
+				if (requestMatch.available == 0) {
+
+					requestMatch.remove();
+					console.log('Removed an empty invite.')
+
+				} else {
+					requestMatch.save( function (err, newGameRequest) {
+						console.log("Joined Match: " + JSON.stringify(newGameRequest));
+					});
+				}
 
 				var newRoomName = requestMatch._id;
 				socket.leave(socket.room);
