@@ -47,7 +47,7 @@
 		var reqLat = parseFloat($('#latitude').val());
 		var gameTp = $('#gametype').val();
 
-		var request = {gametype : gameTp , loc : [reqLng, reqLat], dist : 1, available : 1};
+		var request = {gametype : gameTp , loc : [reqLng, reqLat], dist : 1, available : 1, players : 2};
 		socket.emit('gameRequest', request);
 	}
 

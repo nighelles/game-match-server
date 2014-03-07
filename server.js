@@ -12,7 +12,8 @@ var gameRequestSchema = mongoose.Schema({
     gametype: String,
 	loc: { type: [Number], index: '2dsphere'}, //geoJSON type
     dist: Number,
-    available: Number
+    available: Number,
+    players: Number
 });
 
 var gameRequest = mongoose.model('gameRequest',gameRequestSchema);
@@ -27,7 +28,8 @@ var testRequest = new gameRequest({
 	gametype: 'Server Development',
 	loc: [122.264,37.866],
 	dist: 1,
-	available: 500
+	available: 1,
+	players: 2
 });
 
 // Save the new request that we just made
@@ -61,10 +63,27 @@ function handler(req, res) {
 }
 
 io.sockets.on('connection', function(socket) {
-	var alias = "null";
+	var alias = "noname";
 
 	socket.room = 'waiting';
 	socket.join(socket.room);
+
+	socket.on('disconnect', function() {
+		console.log(socket.alias + "DISCONNECTED");
+
+		// CLEAN UP REQUESTS THAT MIGHT BE FLOATING AROUND
+		gameRequest.findOne({username: alias}, function(err, request) {
+			if (request != null) { //Match could have started and been deleted already
+				request.available = request.available + 1;
+
+				if (request.available == request.players) {
+					console.log("Match Request is empty, deleting");
+					request.remove();
+				}
+			}
+		});
+	});
+
 
 	socket.on('setAlias', function (data) {
 		console.log("User + " + alias + " changed alias to: " + data);
@@ -96,7 +115,8 @@ io.sockets.on('connection', function(socket) {
 					gametype: request['gametype'],
 					loc: searchpoint,
 					dist: request['dist'],
-					available: request['available']
+					available: request['available'],
+					players: request['players']
 				});
 
 				newGameRequest.save( function (err, newGameRequest) {
@@ -123,6 +143,7 @@ io.sockets.on('connection', function(socket) {
 
 					requestMatch.remove();
 					console.log('Removed an empty invite.')
+					//send match start code to everyone
 
 				} else {
 					requestMatch.save( function (err, newGameRequest) {
