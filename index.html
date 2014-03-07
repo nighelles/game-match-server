@@ -52,11 +52,13 @@
 	}
 
 	function setAlias() {
+		var reqLng = parseFloat($('#longitude').val());
+		var reqLat = parseFloat($('#latitude').val());
 		if ($('#aliasInput').val() != "")
 		{
 			alias = $("#aliasInput").val();
 			//alert('set alias');
-			socket.emit('setAlias', alias);
+			socket.emit('setAlias', {alias: alias, loc: [reqLng, reqLat]} );
 			$('#chatStuff').show();
 			$('#aliasStuff').hide();
 		}

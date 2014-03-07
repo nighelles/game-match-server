@@ -64,12 +64,17 @@ function handler(req, res) {
 
 io.sockets.on('connection', function(socket) {
 	var alias = "noname";
+	var searchpoint = [0,0];
 
 	socket.room = 'waiting';
 	socket.join(socket.room);
 
 	socket.on('disconnect', function() {
 		console.log(socket.alias + "DISCONNECTED");
+
+		var allResponse = {'type' : 'PLAYERLEFT', 'alias' : alias};
+
+		socket.broadcast.to(socket.room).emit('notification', allResponse);
 
 		// CLEAN UP REQUESTS THAT MIGHT BE FLOATING AROUND
 		gameRequest.findOne({username: alias}, function(err, request) {
@@ -86,14 +91,28 @@ io.sockets.on('connection', function(socket) {
 
 
 	socket.on('setAlias', function (data) {
-		console.log("User + " + alias + " changed alias to: " + data);
-		alias = data;
+		searchpoint = data['loc'];
+		console.log("User + " + alias + " changed alias to: " + data['alias']);
+		console.log("They are at: " + searchpoint)
+		alias = data['alias'];
+	});
+
+	socket.on('updateLocation', function (loc) {
+		searchpoint = loc;
+		console.log("User + " + alias + " changed location to:" + loc);
+
+		var allResponse = {
+			'type' : 'PLAYERLOCATION', 'alias' : alias, 
+			'lng' : searchpoint[0],
+			'lat' : searchpoint[1]
+		};
+		socket.broadcast.to(socket.room).emit('notification', allResponse);
 	});
 
 	socket.on('gameRequest', function (request) {
 		console.log('new game request');
 
-		var searchpoint = request['loc'];
+		searchpoint = request['loc'];
 
 		console.log(request['loc']);
 		console.log(searchpoint);
@@ -139,10 +158,20 @@ io.sockets.on('connection', function(socket) {
 
 				requestMatch.available = requestMatch.available - 1; // one joined
 
-				if (requestMatch.available == 0) {
+				var newRoomName = requestMatch._id;
+				socket.leave(socket.room);
+				socket.join(newRoomName);
+				socket.room = newRoomName;
 
+				if (requestMatch.available == 0) {
+					console.log("available " + requestMatch.available)
 					requestMatch.remove();
 					console.log('Removed an empty invite.')
+					console.log('starting the match')
+
+					var startResponse = {'type' : 'STARTMATCH', 'alias' : alias};
+					socket.broadcast.to(socket.room).emit('notification', startResponse);
+					socket.emit('notification', startResponse); // we need to tell the person to start too
 					//send match start code to everyone
 
 				} else {
@@ -151,12 +180,7 @@ io.sockets.on('connection', function(socket) {
 					});
 				}
 
-				var newRoomName = requestMatch._id;
-				socket.leave(socket.room);
-				socket.join(newRoomName);
-				socket.room = newRoomName;
-
-				var userResponse = {'type' : 'MATCHFOUND'};
+				var userResponse = {'type' : 'MATCHFOUND', 'alias': alias};
 				socket.emit('notification', userResponse);
 
 				var allResponse = {'type' : 'PLAYERFOUND', 'alias' : alias};
