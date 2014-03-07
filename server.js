@@ -10,7 +10,7 @@ db.once('open', function callback() {
 var gameRequestSchema = mongoose.Schema({
 	username: String,
     gametype: String,
-	loc:{ type: [Number], index: '2dsphere'},
+	loc: { type: [Number], index: '2dsphere'}, //geoJSON type
     dist: Number,
     available: Number
 });
@@ -25,15 +25,17 @@ gameRequest.remove({}, function(err) {
 var testRequest = new gameRequest({
 	username: 'nighelles',
 	gametype: 'Server Development',
-	loc: [-122.264,37.866],
+	loc: [122.264,37.866],
 	dist: 1,
-	available: 1
+	available: 500
 });
 
 // Save the new request that we just made
 testRequest.save(function (err, testRequest) {
 	if (err) return console.error(err);
 });
+
+console.log(JSON.stringify(testRequest));
 
 
 // start what we'll expose to the client
@@ -42,7 +44,7 @@ var http = require('http').createServer(handler)
 	, io = require('socket.io').listen(http)
 	, fs = require('fs')
 
-http.listen(80);
+http.listen(8024);
 
 function handler(req, res) {
 	fs.readFile(__dirname + '/index.html',
@@ -72,20 +74,34 @@ io.sockets.on('connection', function(socket) {
 	socket.on('gameRequest', function (request) {
 		console.log('new game request');
 
-		gameRequest.find({ gametype : request['gametype'] }).exec(function (err, results) {
+		var searchpoint = request['loc'];
+
+		console.log(request['loc']);
+		console.log(searchpoint);
+		
+		var searchdist = request['dist']/3963;
+
+		gameRequest.find({
+			gametype: request['gametype']
+		}).where('loc').near({ center: searchpoint, maxDistance: searchdist, spherical: true}).exec(
+		function(err, results) {
+
+			console.log(err);
+		
 			if (results.length == 0) {
 				console.log('no games found');
 
 				var newGameRequest = new gameRequest({
 					username: alias,
 					gametype: request['gametype'],
-					loc: request['loc'],
+					loc: searchpoint,
 					dist: request['dist'],
 					available: request['available']
 				});
 
 				newGameRequest.save( function (err, newGameRequest) {
 					console.log("Created New Match: " + JSON.stringify(newGameRequest));
+					console.log(JSON.stringify(newGameRequest.loc));
 				});
 
 				var newRoomName = newGameRequest._id;	// user the request id for the initial request as a room name
@@ -98,6 +114,7 @@ io.sockets.on('connection', function(socket) {
 
 			} else {
 				console.log('match found for request');
+				console.log(JSON.stringify(results));
 				requestMatch = results[0];
 
 				requestMatch.available = requestMatch.available - 1; // one joined

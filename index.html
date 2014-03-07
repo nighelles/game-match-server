@@ -13,12 +13,20 @@
 	</div>
 
 	<input type="text" id="messageText">
+</div>
 
+<div id="matchStuff">
+	<label for="gametype">Game Type: </label>
+	<input type="text" id="gametype">
+	<label for="longitude">Longitude: </label>
+	<input type="text" id="longitude">
+	<label for="latitude">Latitude: </label>
+	<input type="text" id="latitude">
 	<button id="testRequest">Test Request</button>
 </div>
 
 <script>
-	var socket = io.connect('http://54.186.16.31/');
+	var socket = io.connect('http://localhost/');//'http://54.186.16.31/');
 	var alias = '';
 
 	function receiveMessage(msg, alias) {
@@ -35,7 +43,11 @@
 	}
 
 	function sendTestRequest() {
-		var request = {gametype : "Test" , loc : [123,123], dist : 1, available : 1};
+		var reqLng = parseFloat($('#longitude').val());
+		var reqLat = parseFloat($('#latitude').val());
+		var gameTp = $('#gametype').val();
+
+		var request = {gametype : gameTp , loc : [reqLng, reqLat], dist : 1, available : 1};
 		socket.emit('gameRequest', request);
 	}
 
