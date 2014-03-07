@@ -63,7 +63,7 @@ function handler(req, res) {
 }
 
 io.sockets.on('connection', function(socket) {
-	var alias = "noname";
+	socket.alias = "noname";
 	var searchpoint = [0,0];
 
 	socket.room = 'waiting';
@@ -72,12 +72,12 @@ io.sockets.on('connection', function(socket) {
 	socket.on('disconnect', function() {
 		console.log(socket.alias + "DISCONNECTED");
 
-		var allResponse = {'type' : 'PLAYERLEFT', 'alias' : alias};
+		var allResponse = {'type' : 'PLAYERLEFT', 'alias' : socket.alias};
 
 		socket.broadcast.to(socket.room).emit('notification', allResponse);
 
 		// CLEAN UP REQUESTS THAT MIGHT BE FLOATING AROUND
-		gameRequest.findOne({username: alias}, function(err, request) {
+		gameRequest.findOne({username: socket.alias}, function(err, request) {
 			if (request != null) { //Match could have started and been deleted already
 				request.available = request.available + 1;
 
@@ -89,20 +89,19 @@ io.sockets.on('connection', function(socket) {
 		});
 	});
 
-
 	socket.on('setAlias', function (data) {
 		searchpoint = data['loc'];
-		console.log("User + " + alias + " changed alias to: " + data['alias']);
+		console.log("User + " + socket.alias + " changed alias to: " + data['alias']);
 		console.log("They are at: " + searchpoint)
-		alias = data['alias'];
+		socket.alias = data['alias'];
 	});
 
 	socket.on('updateLocation', function (loc) {
 		searchpoint = loc;
-		console.log("User + " + alias + " changed location to:" + loc);
+		console.log("User + " + socket.alias + " changed location to:" + loc);
 
 		var allResponse = {
-			'type' : 'PLAYERLOCATION', 'alias' : alias, 
+			'type' : 'PLAYERLOCATION', 'alias' : socket.alias, 
 			'lng' : searchpoint[0],
 			'lat' : searchpoint[1]
 		};
@@ -130,7 +129,7 @@ io.sockets.on('connection', function(socket) {
 				console.log('no games found');
 
 				var newGameRequest = new gameRequest({
-					username: alias,
+					username: socket.alias,
 					gametype: request['gametype'],
 					loc: searchpoint,
 					dist: request['dist'],
@@ -169,7 +168,7 @@ io.sockets.on('connection', function(socket) {
 					console.log('Removed an empty invite.')
 					console.log('starting the match')
 
-					var startResponse = {'type' : 'STARTMATCH', 'alias' : alias};
+					var startResponse = {'type' : 'STARTMATCH', 'alias' : socket.alias};
 					socket.broadcast.to(socket.room).emit('notification', startResponse);
 					socket.emit('notification', startResponse); // we need to tell the person to start too
 					//send match start code to everyone
@@ -180,10 +179,19 @@ io.sockets.on('connection', function(socket) {
 					});
 				}
 
-				var userResponse = {'type' : 'MATCHFOUND', 'alias': alias};
+				var userResponse = {'type' : 'MATCHFOUND', 'alias': socket.alias};
 				socket.emit('notification', userResponse);
 
-				var allResponse = {'type' : 'PLAYERFOUND', 'alias' : alias};
+				// WE NEED TO TELL THE NEW PLAYER ABOUT ALL THE OLD PLAYERS
+				clients = io.sockets.clients(socket.room);
+				for (var i = 0; i < clients.length; i=i+1) {
+					if (socket.alias != clients[i].alias) {
+						var newResponse = {'type' : 'PLAYERFOUND', 'alias' : clients[i].alias};
+						socket.emit('notification', newResponse);
+					}
+				}
+
+				var allResponse = {'type' : 'PLAYERFOUND', 'alias' : socket.alias};
 				socket.broadcast.to(socket.room).emit('notification', allResponse);
 			}
 		});
@@ -195,10 +203,10 @@ io.sockets.on('connection', function(socket) {
 	//	socket.set('alias', data);
 	//});
 
-	socket.on('message', function(message) {
-		var data = { 'message' : message, alias : alias };
+	socket.on('message', function(message) { // message between clients might be in an array
+		var data = { 'message' : message, alias : socket.alias };
 		socket.broadcast.to(socket.room).emit('message', data);
-		console.log("user " + alias + " sent this: " + message);
+		console.log("user " + socket.alias + " sent this: " + message);
 	})
 });
 
