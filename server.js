@@ -1,4 +1,8 @@
+//INCLUDES
 var mongoose = require('mongoose');
+var bcrypt = require('bcrypt');
+
+// DATABASE
 mongoose.connect('mongodb://localhost/test');
 
 var db = mongoose.connection;
@@ -6,6 +10,9 @@ db.on('error', console.error.bind(console, 'connection error:'));
 db.once('open', function callback() {
 	// connected succesfully to database
 });
+
+
+//MODELS FOR DATABASE
 
 var gameRequestSchema = mongoose.Schema({
 	username: String,
@@ -31,6 +38,15 @@ var testRequest = new gameRequest({
 	available: 1,
 	players: 2
 });
+
+//MODEL FOR USERS
+
+var userSchema = mongoose.Schema({
+	username: String,
+	password: String
+});
+
+var matchUser = mongoose.model('matchUser', userSchema);
 
 // Save the new request that we just made
 testRequest.save(function (err, testRequest) {
@@ -90,10 +106,63 @@ io.sockets.on('connection', function(socket) {
 	});
 
 	socket.on('setAlias', function (data) {
-		searchpoint = data['loc'];
-		console.log("User + " + socket.alias + " changed alias to: " + data['alias']);
-		console.log("They are at: " + searchpoint)
-		socket.alias = data['alias'];
+		var loginAlias = data['alias'];
+		var loginPassword = data['password'];
+
+		matchUser.findOne({username:loginAlias}, function(err, loginUser) {
+			if (loginUser != null) {
+				//check password
+				bcrypt.compare(loginPassword,loginUser.password,function(err, res) {
+					if (res == false) {
+						// BAD PASSWORD
+						var badPwdResponse = {'type' : 'BADPASSWORD', 'alias': socket.alias};
+						socket.emit('notification', badPwdResponse);
+					} else {
+						// Password is ok, login user
+						searchpoint = data['loc'];
+
+						console.log("User logged in as: " + data['alias']);
+						console.log("They are at: " + searchpoint)
+						socket.alias = data['alias'];
+
+						var loginResponse = {'type' : 'LOGINOK', 'alias': loginAlias};
+						socket.emit('notification', loginResponse);
+					}
+				});
+			} else {
+				// user does not exist, create it
+				bcrypt.genSalt(10, function(err, salt) {
+					bcrypt.hash(loginPassword, salt, function (err, hash) {
+						var newUser = new matchUser({
+							username: loginAlias,
+							password: hash
+						});
+						newUser.save(); // Save new user into data base
+						searchpoint = data['loc'];
+
+						console.log("User registered as: " + data['alias']);
+						console.log("They are at: " + searchpoint)
+						socket.alias = data['alias'];
+
+						var loginResponse = {'type' : 'REGISTEROK', 'alias': loginAlias};
+						socket.emit('notification', loginResponse);
+					});
+				});
+			}
+		});
+	});
+
+	socket.on('checkUser', function (data) {
+		var wantedName = data['alias'];
+		matchUser.findOne({username:wantedName}, function(err, user) {
+			if (user == null) {
+				var userNameResponse = {'type' : 'USERNAMEAVAILABLE', 'alias': wantedName};
+				socket.emit('notification', userNameResponse);
+			} else {
+				var userNameResponse = {'type' : 'USERNAMETAKEN', 'alias': wantedName};
+				socket.emit('notification', userNameResponse);
+			}
+		});
 	});
 
 	socket.on('updateLocation', function (loc) {
