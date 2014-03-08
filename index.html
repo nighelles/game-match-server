@@ -38,7 +38,7 @@
 		{
 			socket.emit('message', [$('#messageText').val()]); // PUT MESSAGE IN ARRAY
 				// THIS IS BECAUSE THE IOS CLIENT CAN ONLY MAKE JSON FROM ARRAYS
-				
+
 			receiveMessage($('#messageText').val(), "Me");
 			$('#messageText').val('');
 		}
