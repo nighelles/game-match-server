@@ -117,9 +117,10 @@ io.sockets.on('connection', function(socket) {
 						// BAD PASSWORD
 						var badPwdResponse = {'type' : 'BADPASSWORD', 'alias': socket.alias};
 						socket.emit('notification', badPwdResponse);
+						console.log("User attempted login as: " + loginAlias + " BAD PASSWORD");
 					} else {
 						// Password is ok, login user
-						searchpoint = data['loc'];
+						//searchpoint = data['loc'];
 
 						console.log("User logged in as: " + data['alias']);
 						console.log("They are at: " + searchpoint)
@@ -138,7 +139,7 @@ io.sockets.on('connection', function(socket) {
 							password: hash
 						});
 						newUser.save(); // Save new user into data base
-						searchpoint = data['loc'];
+						//searchpoint = data['loc'];
 
 						console.log("User registered as: " + data['alias']);
 						console.log("They are at: " + searchpoint)

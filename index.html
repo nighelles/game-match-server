@@ -4,6 +4,9 @@
 <div id="aliasStuff">
 	<label for="aliasInput">Please Select an alias:</label>
 	<input type="text" id="aliasInput">
+
+	<label for="passwordInput">Please Select an alias:</label>
+	<input type="text" id="passwordInput">
 	<button id = "sendAliasButton">Set Alias</button></input>
 </div>
 
@@ -54,16 +57,26 @@
 	}
 
 	function setAlias() {
-		var reqLng = parseFloat($('#longitude').val());
-		var reqLat = parseFloat($('#latitude').val());
-		if ($('#aliasInput').val() != "")
+		//var reqLng = parseFloat($('#longitude').val());
+		//var reqLat = parseFloat($('#latitude').val());
+		var password = $('#passwordInput').val();
+
+		if ($('#aliasInput').val() != "" && password != "")
 		{
 			alias = $("#aliasInput").val();
 			//alert('set alias');
-			socket.emit('setAlias', {alias: alias, loc: [reqLng, reqLat]} );
-			$('#chatStuff').show();
-			$('#aliasStuff').hide();
+			socket.emit('setAlias', {alias: alias, password: password} );
 		}
+	}
+
+	function loginOk() {
+		$('#chatStuff').show();
+		$('#aliasStuff').hide();
+		$("#chatEntries").append('<div class="notification"><p>##### Login Ok #####</p></div>');
+	}
+
+	function loginBad() {
+		$("#passwordInput").val("Bad login");
 	}
 
 	socket.on('message', function(data) {
@@ -82,6 +95,12 @@
 		}
 		if (notification['type'] == "MATCHFOUND") {
 			$("#chatEntries").append('<div class="notification"><p>##### MATCH FOUND #####</p></div>');
+		}
+		if (notification['type'] == "LOGINOK" || notification['type'] == "REGISTEROK") {
+			loginOk();
+		}
+		if (notification['type'] == "BADPASSWORD") {
+			loginBad();
 		}
 	});
 
