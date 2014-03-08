@@ -1,5 +1,58 @@
 This is the server that will allow game matching and communication between users.
 
+The server keeps track of gamerequest objects in an sql database, these objects have the following properties:
+id 		- in order of creation.
+name 		- name of player who is requesting the match
+game		- name of the activity that the request is for
+longitude	- Longitude of creating user
+latitude	- Latitude of creating user
+tolerance	- How many miles away can joining users be 
+available - count of how many player spots are still open in the "game"
+
+<<<<<<< HEAD
+Things to Fix:
+=======
+The server also tracks all usernames that have been registered:
+username	- should be obvious
+id		- assigned in order of creation
+
+
+##### COMMANDS #####
+
+The server will respond to the following commands on port 1234
+0:username:			=> Recognize user in user database
+				=> This command is necessariy before the server will present you with matches
+
+1:Activity:Longitude:Latitude:Tolerance:available:
+				=> Create game request
+
+2:DATA				=> send a block of data to each game client in our match
+
+3:username			=> Request creation of a username
+
+4:				=> Disconnect from match
+
+##### RESPONSES #####
+
+The server will respond with a message who's first byte corresponds to the notification it is sending.
+ERRORCODE 	= 0
+IDENTIFYUSEROK 	= 1
+IDENTITYUSERFAIL= 2
+NEWUSEROK	= 3
+NEWUSERFAIL	= 4	(This message will be sent if the username is taken)
+REQUESTWAIT	= 5 	(The server has received your request, but is still matching players)
+REQUESTFOUND	= 6	(The server has found a player for your request, added to match)
+DATACODE	= 7	(The rest of the message bytes contain data from a client)
+LEFTCODE	= 8	(A player has left the match)
+
+MATCHSTART	= 9	(All requested players for this match have been found/added)
+			(The server will delete the request)
+
+
+
 
 Things to Fix:
-- Decide on an actual Licence.
+- (FIXED) Allow matching between more than 2 people
+- (FIXED, sorta) Match based on actual distance rather than long/lat difference.
+- Change connection objects to only store the transport, rather than the whole connection.
+
