@@ -58,9 +58,17 @@ console.log(JSON.stringify(testRequest));
 
 // start what we'll expose to the client
 
-var http = require('https').createServer(handler)
+var https = require('https')
 var io = require('socket.io').listen(http)
 var fs = require('fs')
+
+var serverOptions = {
+	key: fs.readFileSync('certs/server.key'),
+    cert: fs.readFileSync('certs/server.crt'),
+    ca: fs.readFileSync( 'bundle.crt')
+};
+
+http = https.createServer(serverOptions, handler);
 
 http.listen(8024);
 //http.listen(443);
@@ -73,8 +81,9 @@ function handler(req, res) {
 				return res.end("Error loading index.html");
 			}
 
-			res.writeHead(200);
-			res.end(data);
+			//res.writeHead(200);
+			//res.end(data);
+			res.end("Web Interface coming soon");
 		});
 	console.log('Responded to http request');
 }
