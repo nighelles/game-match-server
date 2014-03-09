@@ -260,6 +260,21 @@ io.sockets.on('connection', function(socket) {
 				socket.join(newRoomName);
 				socket.room = newRoomName;
 
+				var userResponse = {'type' : 'MATCHFOUND', 'alias': socket.alias};
+				socket.emit('notification', userResponse);
+
+				// WE NEED TO TELL THE NEW PLAYER ABOUT ALL THE OLD PLAYERS
+				clients = io.sockets.clients(socket.room);
+				for (var i = 0; i < clients.length; i=i+1) {
+					if (socket.alias != clients[i].alias) {
+						var newResponse = {'type' : 'PLAYERFOUND', 'alias' : clients[i].alias};
+						socket.emit('notification', newResponse);
+					}
+				}
+
+				var allResponse = {'type' : 'PLAYERFOUND', 'alias' : socket.alias};
+				socket.broadcast.to(socket.room).emit('notification', allResponse);
+
 				if (requestMatch.available == 0) {
 					console.log("available " + requestMatch.available)
 					requestMatch.remove();
@@ -276,21 +291,6 @@ io.sockets.on('connection', function(socket) {
 						console.log("Joined Match: " + JSON.stringify(newGameRequest));
 					});
 				}
-
-				var userResponse = {'type' : 'MATCHFOUND', 'alias': socket.alias};
-				socket.emit('notification', userResponse);
-
-				// WE NEED TO TELL THE NEW PLAYER ABOUT ALL THE OLD PLAYERS
-				clients = io.sockets.clients(socket.room);
-				for (var i = 0; i < clients.length; i=i+1) {
-					if (socket.alias != clients[i].alias) {
-						var newResponse = {'type' : 'PLAYERFOUND', 'alias' : clients[i].alias};
-						socket.emit('notification', newResponse);
-					}
-				}
-
-				var allResponse = {'type' : 'PLAYERFOUND', 'alias' : socket.alias};
-				socket.broadcast.to(socket.room).emit('notification', allResponse);
 			}
 		});
 	});
