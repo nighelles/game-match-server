@@ -58,12 +58,12 @@ console.log(JSON.stringify(testRequest));
 
 // start what we'll expose to the client
 
-var http = require('http').createServer(handler)
-	, io = require('socket.io').listen(http)
-	, fs = require('fs')
+var http = require('https').createServer(handler)
+var io = require('socket.io').listen(http)
+var fs = require('fs')
 
 http.listen(8024);
-//http.listen(80);
+//http.listen(443);
 
 function handler(req, res) {
 	fs.readFile(__dirname + '/index.html',
