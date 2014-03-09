@@ -63,6 +63,7 @@ var http = require('http').createServer(handler)
 	, fs = require('fs')
 
 http.listen(8024);
+//http.listen(80);
 
 function handler(req, res) {
 	fs.readFile(__dirname + '/index.html',
@@ -131,6 +132,24 @@ io.sockets.on('connection', function(socket) {
 					}
 				});
 			} else {
+				var badPwdResponse = {'type' : 'BADPASSWORD', 'alias': socket.alias};
+				socket.emit('notification', badPwdResponse);
+				console.log("User not found: ",loginAlias);
+			}
+		});
+	});
+
+	socket.on('createAlias', function (data) {
+		var loginAlias = data['alias'];
+		var loginPassword = data['password'];
+
+		matchUser.findOne({username:loginAlias}, function(err, loginUser) {
+			if (loginUser != null) {
+				//already taken
+				var userNameResponse = {'type' : 'USERNAMETAKEN', 'alias': wantedName};
+				socket.emit('notification', userNameResponse);
+			} else {
+
 				// user does not exist, create it
 				bcrypt.genSalt(10, function(err, salt) {
 					bcrypt.hash(loginPassword, salt, function (err, hash) {
