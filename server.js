@@ -69,8 +69,8 @@ var serverOptions = {
 
 http = https.createServer(serverOptions, handler);
 
-http.listen(8024);
-//http.listen(443);
+//http.listen(8024);
+http.listen(443);
 
 function handler(req, res) {
 	fs.readFile(__dirname + '/index.html',
