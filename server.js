@@ -64,8 +64,7 @@ var fs = require('fs')
 
 var serverOptions = {
 	key: fs.readFileSync('certs/server.key'),
-    cert: fs.readFileSync('certs/server.crt'),
-    ca: fs.readFileSync( 'bundle.crt')
+    cert: fs.readFileSync('certs/server.crt')
 };
 
 http = https.createServer(serverOptions, handler);
