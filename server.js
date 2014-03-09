@@ -59,7 +59,6 @@ console.log(JSON.stringify(testRequest));
 // start what we'll expose to the client
 
 var https = require('https')
-var io = require('socket.io').listen(http)
 var fs = require('fs')
 
 var serverOptions = {
@@ -68,6 +67,8 @@ var serverOptions = {
 };
 
 http = https.createServer(serverOptions, handler);
+
+var io = require('socket.io').listen(http)
 
 //http.listen(8024);
 http.listen(443);
