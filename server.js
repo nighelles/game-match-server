@@ -250,9 +250,10 @@ io.sockets.on('connection', function(socket) {
 		});
 	});
 
-	
+
 
 	socket.on('joinMatch', function(data) {
+		console.write("trying to join: " + data['id'])
 		gameRequest.findOne({ id : data['id']}, function(err,requestMatch) {
 			if (requestMatch != null) {
 				if (requestMatch.available > 0) {
