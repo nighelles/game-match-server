@@ -115,16 +115,6 @@ io.sockets.on('connection', function(socket) {
 		});
 	});
 
-	socket.on('requestList', function(data) {
-		gameRequest.find({
-			gametype: request['gametype']
-		}).where('loc').near({ center: searchpoint, maxDistance: searchdist, spherical: true}).exec(
-		function(err, results) {
-			var listResponse = {'type' : 'CURRENTLIST', 'list': results};
-			socket.emit('notification', listResponse);
-		});
-	});
-
 	socket.on('setAlias', function (data) {
 		var loginAlias = data['alias'];
 		var loginPassword = data['password'];
@@ -226,84 +216,112 @@ io.sockets.on('connection', function(socket) {
 		
 		var searchdist = request['dist']/3963;
 
-		gameRequest.find({
-			gametype: request['gametype']
-		}).where('loc').near({ center: searchpoint, maxDistance: searchdist, spherical: true}).exec(
+		var newGameRequest = new gameRequest({
+			username: socket.alias,
+			gametype: request['gametype'],
+			loc: searchpoint,
+			dist: request['dist'],
+			available: request['available'],
+			players: request['players']
+		});
+
+		newGameRequest.save( function (err, newGameRequest) {
+			console.log("Created New Match: " + JSON.stringify(newGameRequest));
+			console.log(JSON.stringify(newGameRequest.loc));
+		});
+
+		var newRoomName = newGameRequest._id;	// user the request id for the initial request as a room name
+		socket.leave(socket.room);
+		socket.join(newRoomName);
+		socket.room = newRoomName;
+
+		var userResponse = {'type' : 'MATCHWAITING'};
+		socket.emit('notification', userResponse);
+	});
+
+	socket.on('requestList', function(data) {
+		var searchpoint = data['loc'];
+		var searchdist = request['dist']/3963;
+
+		gameRequest.find({}).where('loc').near({ center: searchpoint, maxDistance: searchdist, spherical: true}).exec(
 		function(err, results) {
-
-			console.log(err);
-		
-			if (results.length == 0) {
-				console.log('no games found');
-
-				var newGameRequest = new gameRequest({
-					username: socket.alias,
-					gametype: request['gametype'],
-					loc: searchpoint,
-					dist: request['dist'],
-					available: request['available'],
-					players: request['players']
-				});
-
-				newGameRequest.save( function (err, newGameRequest) {
-					console.log("Created New Match: " + JSON.stringify(newGameRequest));
-					console.log(JSON.stringify(newGameRequest.loc));
-				});
-
-				var newRoomName = newGameRequest._id;	// user the request id for the initial request as a room name
-				socket.leave(socket.room);
-				socket.join(newRoomName);
-				socket.room = newRoomName;
-
-				var userResponse = {'type' : 'MATCHWAITING'};
-				socket.emit('notification', userResponse);
-
-			} else {
-				console.log('match found for request');
-				console.log(JSON.stringify(results));
-				requestMatch = results[0];
-
-				requestMatch.available = requestMatch.available - 1; // one joined
-
-				var newRoomName = requestMatch._id;
-				socket.leave(socket.room);
-				socket.join(newRoomName);
-				socket.room = newRoomName;
-
-				var userResponse = {'type' : 'MATCHFOUND', 'alias': socket.alias};
-				socket.emit('notification', userResponse);
-
-				// WE NEED TO TELL THE NEW PLAYER ABOUT ALL THE OLD PLAYERS
-				clients = io.sockets.clients(socket.room);
-				for (var i = 0; i < clients.length; i=i+1) {
-					if (socket.alias != clients[i].alias) {
-						var newResponse = {'type' : 'PLAYERFOUND', 'alias' : clients[i].alias};
-						socket.emit('notification', newResponse);
-					}
-				}
-
-				var allResponse = {'type' : 'PLAYERFOUND', 'alias' : socket.alias};
-				socket.broadcast.to(socket.room).emit('notification', allResponse);
-
-				if (requestMatch.available == 0) {
-					console.log("available " + requestMatch.available)
-					requestMatch.remove();
-					console.log('Removed an empty invite.')
-					console.log('starting the match')
-
-					var startResponse = {'type' : 'STARTMATCH', 'alias' : socket.alias};
-					socket.broadcast.to(socket.room).emit('notification', startResponse);
-					socket.emit('notification', startResponse); // we need to tell the person to start too
-					//send match start code to everyone
-
-				} else {
-					requestMatch.save( function (err, newGameRequest) {
-						console.log("Joined Match: " + JSON.stringify(newGameRequest));
-					});
-				}
-			}
+			var listResponse = {'type' : 'CURRENTLIST', 'list': results};
+			socket.emit('notification', listResponse);
 		});
 	});
+
+	socket.on('joinMatch', function(data) {
+		gameRequest.findOne({ id : data['id']}, function(err,requestMatch) {
+			if (requestMatch != null) {
+				if (requestMatch.available > 0) {
+					
+					console.log('joining match');
+					console.log(JSON.stringify(matchToJoin));
+
+					requestMatch.available = requestMatch.available - 1; // one joined
+
+					var newRoomName = requestMatch._id;
+					socket.leave(socket.room);
+					socket.join(newRoomName);
+					socket.room = newRoomName;
+
+					var userResponse = {'type' : 'MATCHFOUND', 'alias': socket.alias};
+					socket.emit('notification', userResponse);
+
+					// WE NEED TO TELL THE NEW PLAYER ABOUT ALL THE OLD PLAYERS
+					clients = io.sockets.clients(socket.room);
+					for (var i = 0; i < clients.length; i=i+1) {
+						if (socket.alias != clients[i].alias) {
+							var newResponse = {'type' : 'PLAYERFOUND', 'alias' : clients[i].alias};
+							socket.emit('notification', newResponse);
+						}
+					}
+
+					var allResponse = {'type' : 'PLAYERFOUND', 'alias' : socket.alias};
+					socket.broadcast.to(socket.room).emit('notification', allResponse);
+
+					if (requestMatch.available == 0) {
+						console.log("available " + requestMatch.available)
+						requestMatch.remove();
+						console.log('Removed an empty invite.')
+						console.log('starting the match')
+
+						var startResponse = {'type' : 'STARTMATCH', 'alias' : socket.alias};
+						socket.broadcast.to(socket.room).emit('notification', startResponse);
+						socket.emit('notification', startResponse); // we need to tell the person to start too
+						//send match start code to everyone
+
+					} else {
+						requestMatch.save( function (err, newGameRequest) {
+							console.log("Joined Match: " + JSON.stringify(newGameRequest));
+						});
+					}
+				} else {
+					var badMatchResponse = {'type' : 'BADMATCH', 'alias': 'SERVER'};
+					socket.emit('notification', badMatchResponse);
+				}
+			} else {
+				var badMatchResponse = {'type' : 'BADMATCH', 'alias': 'SERVER'};
+				socket.emit('notification', badMatchResponse);
+			}
+		});
+
+	}))
+
+	// ADD method for joining a particular match from the list, change to create new match
+
+	socket.on('requestList', function(data) {
+		var searchpoint = data['loc'];
+		var searchdist = request['dist']/3963;
+
+		gameRequest.find({}).where('loc').near({ center: searchpoint, maxDistance: searchdist, spherical: true}).exec(
+		function(err, results) {
+			var listResponse = {'type' : 'CURRENTLIST', 'list': results};
+			socket.emit('notification', listResponse);
+		});
+	});
+
+	// ADD method for joining a particular match from the list, change to create new match
 
 	// A user connected
 	//socket.on('setAlias', function (data) {
