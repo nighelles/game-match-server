@@ -254,7 +254,7 @@ io.sockets.on('connection', function(socket) {
 		gameRequest.findOne({ id : data['id']}, function(err,requestMatch) {
 			if (requestMatch != null) {
 				if (requestMatch.available > 0) {
-					
+
 					console.log('joining match');
 					console.log(JSON.stringify(matchToJoin));
 
@@ -306,7 +306,7 @@ io.sockets.on('connection', function(socket) {
 			}
 		});
 
-	}))
+	}));
 
 	// ADD method for joining a particular match from the list, change to create new match
 
