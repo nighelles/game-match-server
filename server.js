@@ -115,6 +115,16 @@ io.sockets.on('connection', function(socket) {
 		});
 	});
 
+	socket.on('requestList', function(data) {
+		gameRequest.find({
+			gametype: request['gametype']
+		}).where('loc').near({ center: searchpoint, maxDistance: searchdist, spherical: true}).exec(
+		function(err, results) {
+			var listResponse = {'type' : 'CURRENTLIST', 'list': results};
+			socket.emit('notification', listResponse);
+		});
+	});
+
 	socket.on('setAlias', function (data) {
 		var loginAlias = data['alias'];
 		var loginPassword = data['password'];
