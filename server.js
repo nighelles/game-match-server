@@ -250,6 +250,8 @@ io.sockets.on('connection', function(socket) {
 		});
 	});
 
+	
+
 	socket.on('joinMatch', function(data) {
 		gameRequest.findOne({ id : data['id']}, function(err,requestMatch) {
 			if (requestMatch != null) {
@@ -307,18 +309,6 @@ io.sockets.on('connection', function(socket) {
 		});
 	});
 
-	// ADD method for joining a particular match from the list, change to create new match
-
-	socket.on('requestList', function(data) {
-		var searchpoint = data['loc'];
-		var searchdist = request['dist']/3963;
-
-		gameRequest.find({}).where('loc').near({ center: searchpoint, maxDistance: searchdist, spherical: true}).exec(
-		function(err, results) {
-			var listResponse = {'type' : 'CURRENTLIST', 'list': results};
-			socket.emit('notification', listResponse);
-		});
-	});
 
 	// ADD method for joining a particular match from the list, change to create new match
 
