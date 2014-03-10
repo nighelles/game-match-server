@@ -49,9 +49,9 @@ var userSchema = mongoose.Schema({
 var matchUser = mongoose.model('matchUser', userSchema);
 
 // Save the new request that we just made
-testRequest.save(function (err, testRequest) {
-	if (err) return console.error(err);
-});
+//testRequest.save(function (err, testRequest) {
+//	if (err) return console.error(err);
+//});
 
 console.log(JSON.stringify(testRequest));
 
