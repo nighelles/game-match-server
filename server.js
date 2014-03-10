@@ -239,8 +239,8 @@ io.sockets.on('connection', function(socket) {
 		socket.emit('notification', userResponse);
 	});
 
-	socket.on('requestList', function(data) {
-		var searchpoint = data['loc'];
+	socket.on('requestList', function(request) {
+		var searchpoint = request['loc'];
 		var searchdist = request['dist']/3963;
 
 		gameRequest.find({}).where('loc').near({ center: searchpoint, maxDistance: searchdist, spherical: true}).exec(
