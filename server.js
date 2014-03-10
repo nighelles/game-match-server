@@ -305,8 +305,7 @@ io.sockets.on('connection', function(socket) {
 				socket.emit('notification', badMatchResponse);
 			}
 		});
-
-	}));
+	});
 
 	// ADD method for joining a particular match from the list, change to create new match
 
