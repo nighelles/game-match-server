@@ -115,6 +115,26 @@ io.sockets.on('connection', function(socket) {
 		});
 	});
 
+	socket.on('leave', function() {
+		console.log(socket.alias + "LEFT MATCH");
+
+		var allResponse = {'type' : 'PLAYERLEFT', 'alias' : socket.alias};
+
+		socket.broadcast.to(socket.room).emit('notification', allResponse);
+
+		// CLEAN UP REQUESTS THAT MIGHT BE FLOATING AROUND
+		gameRequest.findOne({username: socket.alias}, function(err, request) {
+			if (request != null) { //Match could have started and been deleted already
+				request.available = request.available + 1;
+
+				if (request.available == request.players) {
+					console.log("Match Request is empty, deleting");
+					request.remove();
+				}
+			}
+		});
+	});
+
 	socket.on('setAlias', function (data) {
 		var loginAlias = data['alias'];
 		var loginPassword = data['password'];
