@@ -259,7 +259,7 @@ io.sockets.on('connection', function(socket) {
 				if (requestMatch.available > 0) {
 
 					console.log('joining match');
-					console.log(JSON.stringify(matchToJoin));
+					console.log(JSON.stringify(requestMatch));
 
 					requestMatch.available = requestMatch.available - 1; // one joined
 
