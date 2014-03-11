@@ -92,27 +92,29 @@ io.sockets.on('connection', function(socket) {
 	socket.alias = "noname";
 	var searchpoint = [0,0];
 
-	socket.room = 'waiting';
+	socket.room = "waiting";
 	socket.join(socket.room);
 
 	socket.on('disconnect', function() {
 		console.log(socket.alias + "DISCONNECTED");
 
-		var allResponse = {'type' : 'PLAYERLEFT', 'alias' : socket.alias};
+		if (socket.room != "waiting") {
+			var allResponse = {'type' : 'PLAYERLEFT', 'alias' : socket.alias};
 
-		socket.broadcast.to(socket.room).emit('notification', allResponse);
+			socket.broadcast.to(socket.room).emit('notification', allResponse);
 
-		// CLEAN UP REQUESTS THAT MIGHT BE FLOATING AROUND
-		gameRequest.findOne({username: socket.alias}, function(err, request) {
-			if (request != null) { //Match could have started and been deleted already
-				request.available = request.available + 1;
+			// CLEAN UP REQUESTS THAT MIGHT BE FLOATING AROUND
+			gameRequest.findOne({username: socket.alias}, function(err, request) {
+				if (request != null) { //Match could have started and been deleted already
+					request.available = request.available + 1;
 
-				if (request.available == request.players) {
-					console.log("Match Request is empty, deleting");
-					request.remove();
+					if (request.available == request.players) {
+						console.log("Match Request is empty, deleting");
+						request.remove();
+					}
 				}
-			}
-		});
+			});
+		};
 	});
 
 	socket.on('leave', function(data) {
@@ -135,6 +137,7 @@ io.sockets.on('connection', function(socket) {
 			}
 		});
 		socket.leave(socket.room);
+		socket.room = "waiting";
 	});
 
 	socket.on('leaveHost', function(data) {
