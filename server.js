@@ -115,7 +115,7 @@ io.sockets.on('connection', function(socket) {
 		});
 	});
 
-	socket.on('leave', function() {
+	socket.on('leave', function(data) {
 		console.log(socket.alias + "LEFT MATCH");
 
 		var allResponse = {'type' : 'PLAYERLEFT', 'alias' : socket.alias};
@@ -123,7 +123,7 @@ io.sockets.on('connection', function(socket) {
 		socket.broadcast.to(socket.room).emit('notification', allResponse);
 
 		// CLEAN UP REQUESTS THAT MIGHT BE FLOATING AROUND
-		gameRequest.findOne({username: socket.alias}, function(err, request) {
+		gameRequest.findById(data['id'], function(err, request) {
 			if (request != null) { //Match could have started and been deleted already
 				request.available = request.available + 1;
 				request.save();
