@@ -116,7 +116,7 @@ io.sockets.on('connection', function(socket) {
 	});
 
 	socket.on('leave', function(data) {
-		console.log(socket.alias + "LEFT MATCH");
+		console.log(socket.alias + "LEFT MATCH " + data['id']);
 
 		var allResponse = {'type' : 'PLAYERLEFT', 'alias' : socket.alias};
 
@@ -124,6 +124,27 @@ io.sockets.on('connection', function(socket) {
 
 		// CLEAN UP REQUESTS THAT MIGHT BE FLOATING AROUND
 		gameRequest.findById(data['id'], function(err, request) {
+			if (request != null) { //Match could have started and been deleted already
+				request.available = request.available + 1;
+				request.save();
+
+				if (request.available == request.players) {
+					console.log("Match Request is empty, deleting");
+					request.remove();
+				}
+			}
+		});
+	});
+
+	socket.on('leaveHost', function(data) {
+		console.log(socket.alias + "LEFT MATCH as host");
+
+		var allResponse = {'type' : 'PLAYERLEFT', 'alias' : socket.alias};
+
+		socket.broadcast.to(socket.room).emit('notification', allResponse);
+
+		// CLEAN UP REQUESTS THAT MIGHT BE FLOATING AROUND
+		gameRequest.findOne({'username' : socket.alias}, function(err, request) {
 			if (request != null) { //Match could have started and been deleted already
 				request.available = request.available + 1;
 				request.save();
