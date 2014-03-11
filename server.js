@@ -260,7 +260,7 @@ io.sockets.on('connection', function(socket) {
 		console.log(request['loc']);
 		console.log(searchpoint);
 		
-		var searchdist = request['dist']/3963;
+		var searchdist = request['dist']; //all distances now specified in radians
 
 		var newGameRequest = new gameRequest({
 			username: socket.alias,
@@ -287,7 +287,7 @@ io.sockets.on('connection', function(socket) {
 
 	socket.on('requestList', function(request) {
 		var searchpoint = request['loc'];
-		var searchdist = request['dist']/3963;
+		var searchdist = request['dist']; // distances now specified in radians
 
 		gameRequest.find({}).where('loc').near({ center: searchpoint, maxDistance: searchdist, spherical: true}).exec(
 		function(err, results) {
