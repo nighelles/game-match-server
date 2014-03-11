@@ -134,6 +134,7 @@ io.sockets.on('connection', function(socket) {
 				}
 			}
 		});
+		socket.leave(socket.room);
 	});
 
 	socket.on('leaveHost', function(data) {
