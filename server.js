@@ -126,6 +126,7 @@ io.sockets.on('connection', function(socket) {
 		gameRequest.findOne({username: socket.alias}, function(err, request) {
 			if (request != null) { //Match could have started and been deleted already
 				request.available = request.available + 1;
+				request.save();
 
 				if (request.available == request.players) {
 					console.log("Match Request is empty, deleting");
